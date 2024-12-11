@@ -2,9 +2,10 @@ package tasks;
 
 import common.Person;
 import common.PersonService;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /*
 Задача 1
@@ -22,7 +23,18 @@ public class Task1 {
   }
 
   public List<Person> findOrderedPersons(List<Integer> personIds) {
+    /*
+     * personService.findPersons(...) - предположим O(n)
+     * persons.stream().collect(Collectors.toMap(Person::id, person -> person) - O(n)
+     * personIds.stream().map(personMap::get) - O(n)
+     * Итого O(n)
+     */
     Set<Person> persons = personService.findPersons(personIds);
-    return Collections.emptyList();
+
+    Map<Integer, Person> personMap = persons.stream()
+        .collect(Collectors.toMap(Person::id, person -> person));
+
+    return personIds.stream()
+        .map(personMap::get).collect(Collectors.toList());
   }
 }
