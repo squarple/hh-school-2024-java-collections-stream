@@ -1,14 +1,8 @@
 package tasks;
 
 import common.Person;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -20,75 +14,92 @@ P.S. Код в целом рабочий (не везде), комментари
 P.P.S Здесь ваши правки необходимо прокомментировать (можно в коде, можно в PR на Github)
  */
 public class Task9 {
-
-  private long count;
+  /*
+   * поле count удаляем
+   */
 
   // Костыль, эластик всегда выдает в топе "фальшивую персону".
   // Конвертируем начиная со второй
   public List<String> getNames(List<Person> persons) {
-    if (persons.size() == 0) {
-      return Collections.emptyList();
-    }
-    persons.remove(0);
-    return persons.stream().map(Person::firstName).collect(Collectors.toList());
+    /*
+     * Стримы умеют корректно работать с пустыми коллекциями, поэтому в проверке нет смысла.
+     * Вместо удаления первого объекта мы просто пропускаем его.
+     */
+    return persons.stream()
+        .skip(1)
+        .map(Person::firstName)
+        .collect(Collectors.toList());
   }
 
   // Зачем-то нужны различные имена этих же персон (без учета фальшивой разумеется)
   public Set<String> getDifferentNames(List<Person> persons) {
-    return getNames(persons).stream().distinct().collect(Collectors.toSet());
+    /*
+     * Используем вышеописанный метод (getNames) для получения списка имен.
+     * Передаём его в конструктор HashSet.
+     * Останутся только уникальные значения.
+     */
+    return new HashSet<>(getNames(persons));
   }
 
   // Тут фронтовая логика, делаем за них работу - склеиваем ФИО
   public String convertPersonToString(Person person) {
-    String result = "";
-    if (person.secondName() != null) {
-      result += person.secondName();
-    }
-
-    if (person.firstName() != null) {
-      result += " " + person.firstName();
-    }
-
-    if (person.secondName() != null) {
-      result += " " + person.secondName();
-    }
-    return result;
+    /*
+     * Создаем стрим из Ф, И, О.
+     * Фильтруем на !null и склеиваем.
+     */
+    return Stream.of(person.secondName(), person.firstName(), person.middleName())
+        .filter(Objects::nonNull)
+        .collect(Collectors.joining(" "));
   }
 
   // словарь id персоны -> ее имя
   public Map<Integer, String> getPersonNames(Collection<Person> persons) {
-    Map<Integer, String> map = new HashMap<>(1);
-    for (Person person : persons) {
-      if (!map.containsKey(person.id())) {
-        map.put(person.id(), convertPersonToString(person));
-      }
-    }
-    return map;
+    /*
+     * Почему-то была создана мапа с капасити 1 (хотя их чаще будет больше одного)
+     * Заменили на стримы
+     * Так как не описано, что делать, если несколько объектов имеют одинаковый id - берем первый
+     */
+    return persons.stream()
+        .collect(Collectors.toMap(Person::id, this::convertPersonToString, (p1, p2) -> p1));
   }
 
   // есть ли совпадающие в двух коллекциях персоны?
   public boolean hasSamePersons(Collection<Person> persons1, Collection<Person> persons2) {
-    boolean has = false;
-    for (Person person1 : persons1) {
-      for (Person person2 : persons2) {
-        if (person1.equals(person2)) {
-          has = true;
-        }
-      }
-    }
-    return has;
+    /*
+     * Код лаконичнее
+     */
+    return persons1.stream()
+        .anyMatch(persons2::contains);
+    
+    /*
+     * Есть ещё один вариант, возможно он быстрее
+     * Set<Person> person1Set = new HashSet<>(persons1);
+     * return persons2.stream().anyMatch(person1Set::contains);
+     */
   }
 
   // Посчитать число четных чисел
   public long countEven(Stream<Integer> numbers) {
-    count = 0;
-    numbers.filter(num -> num % 2 == 0).forEach(num -> count++);
-    return count;
+    /*
+     * Вместо использования переменной, используем count().
+     * Переменную удаляем.
+     */
+    return numbers
+        .filter(num -> num % 2 == 0)
+        .count();
   }
 
   // Загадка - объясните почему assert тут всегда верен
   // Пояснение в чем соль - мы перетасовали числа, обернули в HashSet, а toString() у него вернул их в сортированном порядке
   void listVsSet() {
+    /*
+     * В сете могут быть только уникальные объекты. Хешкод у Integer - само число.
+     * Так как все наши объекты уникальны (и уникальны их хешкоды), то каждый 
+     * объект будет в отдельном бакете. При вычислении бакета для объекта получится 
+     * так, что номер бакета будет равен хешкоду, то есть самому числу. Так как
+     * бакеты хранятс в массиве, выводится они будут по порядку, а их порядок
+     * соответствует значению, которое они хранят. Получается "отсортированный Set".
+     */
     List<Integer> integers = IntStream.rangeClosed(1, 10000).boxed().collect(Collectors.toList());
     List<Integer> snapshot = new ArrayList<>(integers);
     Collections.shuffle(integers);
