@@ -27,8 +27,12 @@ public class Task6 {
         .flatMap(person -> {
           Set<Integer> areaIds = personAreaIds.getOrDefault(person.id(), Collections.emptySet());
           return areaIds.stream()
-              .map(areaId -> person.firstName() + " - " + areaMap.get(areaId).getName());
+              .map(areaId -> getPersonDescription(person, areaMap.get(areaId)));
         })
         .collect(Collectors.toSet());
+  }
+
+  private static String getPersonDescription(Person person, Area area) {
+    return person.firstName() + " - " + area.getName();
   }
 }
